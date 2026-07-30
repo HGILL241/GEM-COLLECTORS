@@ -1128,20 +1128,19 @@
         }
       }
 
-      function saveScore(name, score) {
-        const scores = getSavedScores();
+      async function saveScore(name, score) {
+  try {
+    await addDoc(collection(database, "scores"), {
+      name: name.trim().substring(0, 20),
+      score: Math.max(0, Math.round(score)),
+      createdAt: serverTimestamp()
+    });
 
-        scores.push({
-          name,
-          score,
-          date: new Date().toLocaleDateString()
-        });
-
-        scores.sort(
-          (first, second) =>
-            second.score - first.score
-        );
-
+    console.log("Score saved successfully.");
+  } catch (error) {
+    console.error("Score could not be saved:", error);
+  }
+}
         const topTenScores =
           scores.slice(0, 10);
 
