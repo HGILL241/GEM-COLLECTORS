@@ -587,6 +587,17 @@
   } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
   (() => {
+  const firebaseConfig = {
+    apiKey: "AIzaSyCjCt7cM46yI0932sDks0CqIFrS_EI9vZY",
+    authDomain: "gem-collectors.firebaseapp.com",
+    projectId: "gem-collectors",
+    storageBucket: "gem-collectors.firebasestorage.app",
+    messagingSenderId: "332664040887",
+    appId: "1:332664040887:web:8b2f797e856aab4dab4c32"
+  };
+
+  const firebaseApp = initializeApp(firebaseConfig);
+  const database = getFirestore(firebaseApp);
       const playerNameInput =
         document.getElementById("playerNameInput");
 
