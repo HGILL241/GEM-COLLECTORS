@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
+  <title>Gem Collector</title>
+
+  <style>
+    :root {
+      --background-dark: #10002b;
+      --background-light: #3c096c;
+      --panel: rgba(255, 255, 255, 0.11);
+      --border: rgba(255, 255, 255, 0.17);
+      --text: #ffffff;
+      --yellow: #ffd166;
+      --orange: #ffb703;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: none;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 20%, #5a189a, transparent 30%),
+        radial-gradient(circle at 85% 25%, #3c096c, transparent 28%),
+        linear-gradient(160deg, var(--background-dark), #240046);
+    }
+
+    .page {
+      display: none;
+      width: 100%;
+      min-height: 100vh;
+      padding: 20px;
+      place-items: center;
+    }
+
+    .page.active {
+      display: grid;
+    }
+
+    .card {
+      width: min(94vw, 520px);
+      padding: 28px;
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(34px, 7vw, 48px);
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 30px;
+    }
+
+    p {
+      line-height: 1.5;
+      opacity: 0.92;
+    }
+
+    input {
+      width: 100%;
+      margin: 16px 0 8px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 14px;
+      outline: none;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      font-size: 17px;
+    }
+
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    input:focus {
+      border-color: var(--yellow);
+    }
+
+    .error {
+      min-height: 20px;
+      margin-bottom: 8px;
+      color: #ffd5d5;
+      font-size: 14px;
+    }
+
+    button {
+      padding: 13px 20px;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      color: #25003d;
+      font-size: 16px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--yellow), var(--orange));
+      box-shadow: 0 8px 20px rgba(255, 183, 3, 0.24);
+    }
+
+    button.secondary {
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.17);
+      background: rgba(255, 255, 255, 0.13);
+      box-shadow: none;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .instructions-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 18px 0;
+      text-align: left;
+    }
+
+    .instruction {
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .instruction strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .game-shell {
+      width: min(95vw, 520px);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1.3fr repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .stat {
+      min-width: 0;
+      padding: 8px 6px;
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel);
+    }
+
+    .stat small {
+      display: block;
+      opacity: 0.72;
+      font-size: 11px;
+    }
+
+    .stat strong {
+      display: block;
+      overflow: hidden;
+      font-size: 18px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    #gameArea {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.14);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.14), transparent 25%),
+        linear-gradient(#35115f, #170027 72%);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    .stars,
+    .stars::before,
+    .stars::after {
+      position: absolute;
+      inset: 0;
+      content: "";
+      pointer-events: none;
+      opacity: 0.28;
+      background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.72) 1px, transparent 1.5px);
+      background-size: 44px 44px;
+    }
+
+    .stars::before {
+      transform: translate(16px, 22px);
+      opacity: 0.35;
+    }
+
+    .stars::after {
+      transform: translate(-12px, 8px);
+      opacity: 0.2;
+      background-size: 70px 70px;
+    }
+
+    #player,
+    .item {
+      position: absolute;
+      line-height: 1;
+      user-select: none;
+      filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.32));
+      will-change: transform;
+    }
+
+    #player {
+      z-index: 5;
+      width: 52px;
+      height: 52px;
+      font-size: 46px;
+    }
+
+    .item {
+      z-index: 4;
+      font-size: 34px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .control-button {
+      width: 90px;
+      height: 54px;
+      padding: 0;
+      color: white;
+      font-size: 23px;
+      border: 1px solid rgba(255, 255, 255, 0.17);
+      background: rgba(255, 255, 255, 0.13);
+      box-shadow: none;
+    }
+
+    .sound-button {
+      position: absolute;
+      z-index: 20;
+      top: 10px;
+      right: 10px;
+      width: 42px;
+      height: 42px;
+      padding: 0;
+      color: white;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.16);
+      box-shadow: none;
+    }
+
+    .flash {
+      position: absolute;
+      z-index: 10;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .flash.active {
+      animation: flash 0.18s ease-out;
+    }
+
+    @keyframes flash {
+      from {
+        opacity: 0.65;
+      }
+
+      to {
+        opacity: 0;
+      }
+    }
+
+    .floating-score {
+      position: absolute;
+      z-index: 15;
+      pointer-events: none;
+      font-size: 22px;
+      font-weight: 900;
+      animation: rise 0.7s ease-out forwards;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 1;
+        transform: translateY(0) scale(0.8);
+      }
+
+      to {
+        opacity: 0;
+        transform: translateY(-46px) scale(1.2);
+      }
+    }
+
+    .final-score-box {
+      margin: 18px 0;
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .final-score-box strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 44px;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 18px;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+
+    th,
+    td {
+      padding: 11px 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    th:last-child,
+    td:last-child {
+      text-align: right;
+    }
+
+    tr.current-player {
+      background: rgba(255, 209, 102, 0.14);
+    }
+
+    .empty-leaderboard {
+      padding: 20px 0;
+      opacity: 0.72;
+    }
+
+    @media (max-width: 540px) {
+      .page {
+        padding: 13px;
+      }
+
+      .card {
+        padding: 22px 16px;
+      }
+
+      .instructions-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- PAGE 1: ENTER NAME -->
+  <section id="namePage" class="page active">
+    <div class="card">
+      <h1>💎 Gem Collector</h1>
+      <p>Enter your name to begin the game.</p>
+
+      <input
+        id="playerNameInput"
+        type="text"
+        maxlength="20"
+        placeholder="Enter player name"
+        autocomplete="name"
+      />
+
+      <div id="nameError" class="error"></div>
+
+      <div class="button-row">
+        <button id="continueButton">Continue</button>
+        <button id="nameLeaderboardButton" class="secondary">
+          Leaderboard
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 2: INSTRUCTIONS -->
+  <section id="instructionsPage" class="page">
+    <div class="card">
+      <h2>How to Play</h2>
+
+      <p>
+        Move the wizard left and right. Collect rewards and avoid dangerous
+        objects.
+      </p>
+
+      <div class="instructions-grid">
+        <div class="instruction">
+          <strong>💎 Gem</strong>
+          +10 points
+        </div>
+
+        <div class="instruction">
+          <strong>⭐ Star</strong>
+          +20 points
+        </div>
+
+        <div class="instruction">
+          <strong>❤️ Heart</strong>
+          +1 life
+        </div>
+
+        <div class="instruction">
+          <strong>⏳ Hourglass</strong>
+          +5 seconds
+        </div>
+
+        <div class="instruction">
+          <strong>💣 Bomb</strong>
+          Lose 1 life
+        </div>
+
+        <div class="instruction">
+          <strong>👻 Ghost</strong>
+          Lose 15 points
+        </div>
+      </div>
+
+      <p>
+        <strong>Computer:</strong> Left and right arrow keys or A and D
+        <br />
+        <strong>Phone:</strong> Use the buttons below the game
+      </p>
+
+      <div class="button-row">
+        <button id="startGameButton">Start Game</button>
+        <button id="backToNameButton" class="secondary">Back</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 3: GAME -->
+  <section id="gamePage" class="page">
+    <div class="game-shell">
+
+      <div class="topbar">
+        <div class="stat">
+          <small>Player</small>
+          <strong id="playerNameDisplay">Guest</strong>
+        </div>
+
+        <div class="stat">
+          <small>Score</small>
+          <strong id="scoreDisplay">0</strong>
+        </div>
+
+        <div class="stat">
+          <small>Time</small>
+          <strong><span id="timeDisplay">60</span>s</strong>
+        </div>
+
+        <div class="stat">
+          <small>Lives</small>
+          <strong id="livesDisplay">❤️❤️❤️</strong>
+        </div>
+      </div>
+
+      <div id="gameArea">
+        <div class="stars"></div>
+
+        <button
+          id="soundButton"
+          class="sound-button"
+          aria-label="Turn sound on or off"
+        >
+          🔊
+        </button>
+
+        <div id="player">🧙</div>
+        <div id="flash" class="flash"></div>
+      </div>
+
+      <div class="controls">
+        <button
+          id="leftButton"
+          class="control-button"
+          aria-label="Move left"
+        >
+          ⬅️
+        </button>
+
+        <button
+          id="rightButton"
+          class="control-button"
+          aria-label="Move right"
+        >
+          ➡️
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 4: GAME OVER -->
+  <section id="gameOverPage" class="page">
+    <div class="card">
+      <h1 id="gameOverTitle">Game Over!</h1>
+      <p id="gameOverMessage">Great effort!</p>
+
+      <div class="final-score-box">
+        Your Score
+        <strong id="finalScoreDisplay">0</strong>
+      </div>
+
+      <div class="button-row">
+        <button id="playAgainButton">Play Again</button>
+
+        <button id="viewLeaderboardButton" class="secondary">
+          Leaderboard
+        </button>
+
+        <button id="changePlayerButton" class="secondary">
+          Change Player
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 5: LEADERBOARD -->
+  <section id="leaderboardPage" class="page">
+    <div class="card">
+      <h2>🏆 Leaderboard</h2>
+
+      <p>Top 10 scores saved on this device.</p>
+
+      <div id="leaderboardContainer"></div>
+
+      <div class="button-row">
+        <button id="leaderboardPlayButton">Play</button>
+
+        <button id="leaderboardHomeButton" class="secondary">
+          Home
+        </button>
+
+        <button id="clearLeaderboardButton" class="secondary">
+          Clear Scores
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (() => {
+      const pages = {
+        name: document.getElementById("namePage"),
+        instructions: document.getElementById("instructionsPage"),
+        game: document.getElementById("gamePage"),
+        gameOver: document.getElementById("gameOverPage"),
+        leaderboard: document.getElementById("leaderboardPage")
+      };
+
+      const playerNameInput =
+        document.getElementById("playerNameInput");
+
+      const nameError =
+        document.getElementById("nameError");
+
+      const playerNameDisplay =
+        document.getElementById("playerNameDisplay");
+
+      const scoreDisplay =
+        document.getElementById("scoreDisplay");
+
+      const timeDisplay =
+        document.getElementById("timeDisplay");
+
+      const livesDisplay =
+        document.getElementById("livesDisplay");
+
+      const finalScoreDisplay =
+        document.getElementById("finalScoreDisplay");
+
+      const gameOverTitle =
+        document.getElementById("gameOverTitle");
+
+      const gameOverMessage =
+        document.getElementById("gameOverMessage");
+
+      const leaderboardContainer =
+        document.getElementById("leaderboardContainer");
+
+      const gameArea =
+        document.getElementById("gameArea");
+
+      const player =
+        document.getElementById("player");
+
+      const flash =
+        document.getElementById("flash");
+
+      const soundButton =
+        document.getElementById("soundButton");
+
+      const state = {
+        running: false,
+        playerName: "",
+        score: 0,
+        time: 60,
+        lives: 3,
+        playerX: 0,
+        movingLeft: false,
+        movingRight: false,
+        objects: [],
+        spawnTimer: 0,
+        elapsedTime: 0,
+        soundEnabled: true,
+        lastFrameTime: 0
+      };
+
+      const objectTypes = [
+        {
+          icon: "💎",
+          score: 10,
+          weight: 38,
+          speed: 1
+        },
+        {
+          icon: "⭐",
+          score: 20,
+          weight: 16,
+          speed: 1.08
+        },
+        {
+          icon: "❤️",
+          life: 1,
+          weight: 8,
+          speed: 0.95
+        },
+        {
+          icon: "⏳",
+          extraTime: 5,
+          weight: 7,
+          speed: 0.92
+        },
+        {
+          icon: "💣",
+          damage: 1,
+          weight: 18,
+          speed: 1.12
+        },
+        {
+          icon: "👻",
+          score: -15,
+          weight: 13,
+          speed: 1.05
+        }
+      ];
+
+      let audioContext;
+
+      function showPage(pageName) {
+        Object.values(pages).forEach((page) => {
+          page.classList.remove("active");
+        });
+
+        pages[pageName].classList.add("active");
+
+        if (pageName === "leaderboard") {
+          displayLeaderboard();
+        }
+
+        if (pageName === "name") {
+          setTimeout(() => {
+            playerNameInput.focus();
+          }, 50);
+        }
+      }
+
+      function validatePlayerName() {
+        const enteredName = playerNameInput.value.trim();
+
+        if (!enteredName) {
+          nameError.textContent =
+            "Please enter your name before continuing.";
+
+          playerNameInput.focus();
+          return false;
+        }
+
+        state.playerName = enteredName;
+        playerNameDisplay.textContent = enteredName;
+        nameError.textContent = "";
+
+        localStorage.setItem(
+          "gemCollectorLastPlayer",
+          enteredName
+        );
+
+        return true;
+      }
+
+      function playSound(frequency = 520, duration = 0.07) {
+        if (!state.soundEnabled) {
+          return;
+        }
+
+        try {
+          audioContext ||= new (
+            window.AudioContext ||
+            window.webkitAudioContext
+          )();
+
+          const oscillator =
+            audioContext.createOscillator();
+
+          const gain =
+            audioContext.createGain();
+
+          oscillator.frequency.value = frequency;
+
+          gain.gain.setValueAtTime(
+            0.05,
+            audioContext.currentTime
+          );
+
+          gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            audioContext.currentTime + duration
+          );
+
+          oscillator
+            .connect(gain)
+            .connect(audioContext.destination);
+
+          oscillator.start();
+
+          oscillator.stop(
+            audioContext.currentTime + duration
+          );
+        } catch (error) {
+          console.log("Sound unavailable.");
+        }
+      }
+
+      function resetGame() {
+        state.score = 0;
+        state.time = 60;
+        state.lives = 3;
+        state.spawnTimer = 0;
+        state.elapsedTime = 0;
+        state.movingLeft = false;
+        state.movingRight = false;
+
+        state.objects.forEach((object) => {
+          object.element.remove();
+        });
+
+        state.objects = [];
+
+        state.playerX =
+          Math.max(0, (gameArea.clientWidth - 52) / 2);
+
+        updateGameDisplay();
+        positionPlayer();
+      }
+
+      function startGame() {
+        resetGame();
+        showPage("game");
+
+        state.running = true;
+        state.lastFrameTime = performance.now();
+
+        requestAnimationFrame(gameLoop);
+      }
+
+      function finishGame() {
+        if (!state.running) {
+          return;
+        }
+
+        state.running = false;
+
+        saveScore(state.playerName, state.score);
+
+        finalScoreDisplay.textContent = state.score;
+
+        gameOverTitle.textContent =
+          state.lives <= 0
+            ? "Game Over!"
+            : "Time's Up!";
+
+        if (state.score >= 500) {
+          gameOverMessage.textContent =
+            "Amazing score!";
+        } else if (state.score >= 250) {
+          gameOverMessage.textContent =
+            "Great job!";
+        } else {
+          gameOverMessage.textContent =
+            "Nice try! Play again and beat your score.";
+        }
+
+        playSound(180, 0.22);
+        showPage("gameOver");
+      }
+
+      function updateGameDisplay() {
+        scoreDisplay.textContent = state.score;
+
+        timeDisplay.textContent =
+          Math.max(0, Math.ceil(state.time));
+
+        livesDisplay.textContent =
+          "❤️".repeat(Math.max(0, state.lives)) || "—";
+      }
+
+      function positionPlayer() {
+        const playerY =
+          gameArea.clientHeight - 68;
+
+        player.style.transform =
+          `translate(${state.playerX}px, ${playerY}px)`;
+      }
+
+      function chooseObjectType() {
+        const totalWeight =
+          objectTypes.reduce(
+            (total, object) => total + object.weight,
+            0
+          );
+
+        let randomNumber =
+          Math.random() * totalWeight;
+
+        for (const object of objectTypes) {
+          randomNumber -= object.weight;
+
+          if (randomNumber <= 0) {
+            return object;
+          }
+        }
+
+        return objectTypes[0];
+      }
+
+      function createFallingObject() {
+        const type = chooseObjectType();
+        const element = document.createElement("div");
+
+        element.className = "item";
+        element.textContent = type.icon;
+
+        gameArea.appendChild(element);
+
+        const x =
+          8 +
+          Math.random() *
+          (gameArea.clientWidth - 48);
+
+        const baseSpeed =
+          145 +
+          Math.min(
+            180,
+            state.elapsedTime * 2.2
+          );
+
+        const fallingObject = {
+          element,
+          type,
+          x,
+          y: -40,
+          speed: baseSpeed * type.speed
+        };
+
+        state.objects.push(fallingObject);
+        positionFallingObject(fallingObject);
+      }
+
+      function positionFallingObject(object) {
+        object.element.style.transform =
+          `translate(${object.x}px, ${object.y}px)`;
+      }
+
+      function hasCollision(object) {
+        const playerX = state.playerX + 6;
+        const playerY = gameArea.clientHeight - 62;
+
+        const playerWidth = 40;
+        const playerHeight = 44;
+
+        const objectWidth = 34;
+        const objectHeight = 34;
+
+        return (
+          object.x < playerX + playerWidth &&
+          object.x + objectWidth > playerX &&
+          object.y < playerY + playerHeight &&
+          object.y + objectHeight > playerY
+        );
+      }
+
+      function showFloatingScore(text, x, y) {
+        const element =
+          document.createElement("div");
+
+        element.className = "floating-score";
+        element.textContent = text;
+
+        element.style.left = `${x}px`;
+        element.style.top = `${y}px`;
+
+        gameArea.appendChild(element);
+
+        setTimeout(() => {
+          element.remove();
+        }, 720);
+      }
+
+      function collectObject(object) {
+        const type = object.type;
+
+        if (type.damage) {
+          state.lives -= type.damage;
+
+          showFloatingScore(
+            "-❤️",
+            object.x,
+            object.y
+          );
+
+          playSound(140, 0.13);
+
+          flash.classList.remove("active");
+          void flash.offsetWidth;
+          flash.classList.add("active");
+        } else {
+          if (type.score) {
+            state.score =
+              Math.max(
+                0,
+                state.score + type.score
+              );
+          }
+
+          if (type.life) {
+            state.lives =
+              Math.min(
+                5,
+                state.lives + type.life
+              );
+          }
+
+          if (type.extraTime) {
+            state.time += type.extraTime;
+          }
+
+          let label = "";
+
+          if (type.extraTime) {
+            label = "+5s";
+          } else if (type.life) {
+            label = "+❤️";
+          } else if (type.score > 0) {
+            label = `+${type.score}`;
+          } else {
+            label = `${type.score}`;
+          }
+
+          showFloatingScore(
+            label,
+            object.x,
+            object.y
+          );
+
+          playSound(
+            type.score < 0 ? 240 : 650,
+            0.07
+          );
+        }
+
+        object.element.remove();
+
+        state.objects =
+          state.objects.filter(
+            (existingObject) =>
+              existingObject !== object
+          );
+
+        updateGameDisplay();
+
+        if (state.lives <= 0) {
+          finishGame();
+        }
+      }
+
+      function gameLoop(currentTime) {
+        if (!state.running) {
+          return;
+        }
+
+        const deltaTime =
+          Math.min(
+            0.04,
+            (currentTime - state.lastFrameTime) /
+              1000
+          );
+
+        state.lastFrameTime = currentTime;
+        state.elapsedTime += deltaTime;
+        state.time -= deltaTime;
+
+        const movementSpeed = 300;
+
+        if (state.movingLeft) {
+          state.playerX -=
+            movementSpeed * deltaTime;
+        }
+
+        if (state.movingRight) {
+          state.playerX +=
+            movementSpeed * deltaTime;
+        }
+
+        state.playerX =
+          Math.max(
+            0,
+            Math.min(
+              gameArea.clientWidth - 52,
+              state.playerX
+            )
+          );
+
+        positionPlayer();
+
+        const spawnInterval =
+          Math.max(
+            0.28,
+            0.76 - state.elapsedTime * 0.006
+          );
+
+        state.spawnTimer += deltaTime;
+
+        if (state.spawnTimer >= spawnInterval) {
+          state.spawnTimer = 0;
+          createFallingObject();
+        }
+
+        for (const object of [...state.objects]) {
+          object.y +=
+            object.speed * deltaTime;
+
+          positionFallingObject(object);
+
+          if (hasCollision(object)) {
+            collectObject(object);
+          } else if (
+            object.y >
+            gameArea.clientHeight + 10
+          ) {
+            object.element.remove();
+
+            state.objects =
+              state.objects.filter(
+                (existingObject) =>
+                  existingObject !== object
+              );
+          }
+        }
+
+        updateGameDisplay();
+
+        if (state.time <= 0) {
+          finishGame();
+        } else {
+          requestAnimationFrame(gameLoop);
+        }
+      }
+
+      function getSavedScores() {
+        try {
+          return JSON.parse(
+            localStorage.getItem(
+              "gemCollectorScores"
+            ) || "[]"
+          );
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function saveScore(name, score) {
+        const scores = getSavedScores();
+
+        scores.push({
+          name,
+          score,
+          date: new Date().toLocaleDateString()
+        });
+
+        scores.sort(
+          (first, second) =>
+            second.score - first.score
+        );
+
+        const topTenScores =
+          scores.slice(0, 10);
+
+        localStorage.setItem(
+          "gemCollectorScores",
+          JSON.stringify(topTenScores)
+        );
+      }
+
+      function escapeHTML(text) {
+        const temporaryElement =
+          document.createElement("div");
+
+        temporaryElement.textContent = text;
+
+        return temporaryElement.innerHTML;
+      }
+
+      function displayLeaderboard() {
+        const scores = getSavedScores();
+
+        if (!scores.length) {
+          leaderboardContainer.innerHTML = `
+            <div class="empty-leaderboard">
+              No scores yet. Play the game to create the first score.
+            </div>
+          `;
+
+          return;
+        }
+
+        const scoreRows =
+          scores
+            .map((entry, index) => {
+              const currentPlayerClass =
+                entry.name === state.playerName
+                  ? "current-player"
+                  : "";
+
+              return `
+                <tr class="${currentPlayerClass}">
+                  <td>${index + 1}</td>
+                  <td>${escapeHTML(entry.name)}</td>
+                  <td>${entry.score}</td>
+                </tr>
+              `;
+            })
+            .join("");
+
+        leaderboardContainer.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Player</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              ${scoreRows}
+            </tbody>
+          </table>
+        `;
+      }
+
+      function connectHoldButton(
+        button,
+        stateProperty
+      ) {
+        function startMovement(event) {
+          event.preventDefault();
+          state[stateProperty] = true;
+        }
+
+        function stopMovement(event) {
+          event.preventDefault();
+          state[stateProperty] = false;
+        }
+
+        button.addEventListener(
+          "pointerdown",
+          startMovement
+        );
+
+        button.addEventListener(
+          "pointerup",
+          stopMovement
+        );
+
+        button.addEventListener(
+          "pointercancel",
+          stopMovement
+        );
+
+        button.addEventListener(
+          "pointerleave",
+          stopMovement
+        );
+      }
+
+      document.addEventListener(
+        "keydown",
+        (event) => {
+          if (
+            ["ArrowLeft", "a", "A"].includes(
+              event.key
+            )
+          ) {
+            state.movingLeft = true;
+          }
+
+          if (
+            ["ArrowRight", "d", "D"].includes(
+              event.key
+            )
+          ) {
+            state.movingRight = true;
+          }
+
+          if (
+            event.key === "Enter" &&
+            pages.name.classList.contains("active")
+          ) {
+            document
+              .getElementById("continueButton")
+              .click();
+          }
+        }
+      );
+
+      document.addEventListener(
+        "keyup",
+        (event) => {
+          if (
+            ["ArrowLeft", "a", "A"].includes(
+              event.key
+            )
+          ) {
+            state.movingLeft = false;
+          }
+
+          if (
+            ["ArrowRight", "d", "D"].includes(
+              event.key
+            )
+          ) {
+            state.movingRight = false;
+          }
+        }
+      );
+
+      connectHoldButton(
+        document.getElementById("leftButton"),
+        "movingLeft"
+      );
+
+      connectHoldButton(
+        document.getElementById("rightButton"),
+        "movingRight"
+      );
+
+      document
+        .getElementById("continueButton")
+        .addEventListener("click", () => {
+          if (validatePlayerName()) {
+            showPage("instructions");
+          }
+        });
+
+      document
+        .getElementById("nameLeaderboardButton")
+        .addEventListener("click", () => {
+          const enteredName =
+            playerNameInput.value.trim();
+
+          if (enteredName) {
+            state.playerName = enteredName;
+          }
+
+          showPage("leaderboard");
+        });
+
+      document
+        .getElementById("backToNameButton")
+        .addEventListener("click", () => {
+          showPage("name");
+        });
+
+      document
+        .getElementById("startGameButton")
+        .addEventListener("click", startGame);
+
+      document
+        .getElementById("playAgainButton")
+        .addEventListener("click", () => {
+          showPage("instructions");
+        });
+
+      document
+        .getElementById("viewLeaderboardButton")
+        .addEventListener("click", () => {
+          showPage("leaderboard");
+        });
+
+      document
+        .getElementById("changePlayerButton")
+        .addEventListener("click", () => {
+          state.playerName = "";
+          playerNameInput.value = "";
+          showPage("name");
+        });
+
+      document
+        .getElementById("leaderboardPlayButton")
+        .addEventListener("click", () => {
+          if (state.playerName) {
+            showPage("instructions");
+          } else {
+            showPage("name");
+          }
+        });
+
+      document
+        .getElementById("leaderboardHomeButton")
+        .addEventListener("click", () => {
+          showPage("name");
+        });
+
+      document
+        .getElementById("clearLeaderboardButton")
+        .addEventListener("click", () => {
+          const confirmed = confirm(
+            "Clear all saved leaderboard scores?"
+          );
+
+          if (confirmed) {
+            localStorage.removeItem(
+              "gemCollectorScores"
+            );
+
+            displayLeaderboard();
+          }
+        });
+
+      soundButton.addEventListener(
+        "click",
+        () => {
+          state.soundEnabled =
+            !state.soundEnabled;
+
+          soundButton.textContent =
+            state.soundEnabled ? "🔊" : "🔇";
+        }
+      );
+
+      window.addEventListener(
+        "resize",
+        () => {
+          state.playerX =
+            Math.min(
+              state.playerX,
+              gameArea.clientWidth - 52
+            );
+
+          positionPlayer();
+        }
+      );
+
+      const savedPlayerName =
+        localStorage.getItem(
+          "gemCollectorLastPlayer"
+        ) || "";
+
+      playerNameInput.value =
+        savedPlayerName;
+
+      if (savedPlayerName) {
+        state.playerName = savedPlayerName;
+        playerNameDisplay.textContent =
+          savedPlayerName;
+      }
+
+      showPage("name");
+    })();
+  </script>
+</body>
+</html>
