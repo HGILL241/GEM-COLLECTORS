@@ -573,15 +573,20 @@
   </section>
 
   <script type="module">
-    (() => {
-      const pages = {
-        name: document.getElementById("namePage"),
-        instructions: document.getElementById("instructionsPage"),
-        game: document.getElementById("gamePage"),
-        gameOver: document.getElementById("gameOverPage"),
-        leaderboard: document.getElementById("leaderboardPage")
-      };
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    query,
+    orderBy,
+    limit,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+  (() => {
       const playerNameInput =
         document.getElementById("playerNameInput");
 
