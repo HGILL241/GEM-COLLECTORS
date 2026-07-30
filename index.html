@@ -572,7 +572,7 @@
     </div>
   </section>
 
-  <script>
+  <script type="module">
     (() => {
       const pages = {
         name: document.getElementById("namePage"),
@@ -882,10 +882,10 @@
           (gameArea.clientWidth - 48);
 
         const baseSpeed =
-          145 +
+          180 +
           Math.min(
-            180,
-            state.elapsedTime * 2.2
+            220,
+            state.elapsedTime * 3.5
           );
 
         const fallingObject = {
@@ -1058,8 +1058,8 @@
 
         const spawnInterval =
           Math.max(
-            0.28,
-            0.76 - state.elapsedTime * 0.006
+            0.24,
+            0.62 - state.elapsedTime * 0.01
           );
 
         state.spawnTimer += deltaTime;
